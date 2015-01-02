@@ -1,6 +1,6 @@
 package com.knuthp.microservices;
 
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -11,13 +11,37 @@ import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.knuthp.microservices.trainstations.rt.domain.RtDepartures;
+import com.knuthp.microservices.trainstations.stations.RtStationListener;
+
 @Component
 public class AppReceiver {
+	private final class RtStationRabbitMqListener {
+		private RtStationListener rtStationListener = new RtStationListener();
+		@SuppressWarnings("unused")
+		public void handleMessage(byte[] foo)
+				throws JsonParseException, JsonMappingException, IOException {
+			String str = new String(foo, "UTF-8");
+			ObjectMapper mapper = new ObjectMapper();
+			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+			RtDepartures rtDepartures = mapper.readValue(foo, RtDepartures.class);
+			System.out.println(rtDepartures.getClass().getCanonicalName() + " : "
+					+ rtDepartures.getPlaceId());
+			rtStationListener.update(rtDepartures);
+		}
+	}
+
 	private static final String DEFAULT_AMQP_RX = "amqp://UITrHgLT:yGYKAijJ5OLNrY5ob0gXgFXN5oViPLGz@slow-vervain-44.bigwig.lshift.net:10923/ix2hR1tr2hmP";
 	private static final Logger logger = LoggerFactory
 			.getLogger(AppReceiver.class);
+	private final Object listener = new RtStationRabbitMqListener();
 
 	public AppReceiver() throws Exception {
+		
 		final URI rabbitMqUrl;
 		try {
 			rabbitMqUrl = new URI(DEFAULT_AMQP_RX);
@@ -35,15 +59,6 @@ public class AppReceiver {
 		// set up the listener and container
 		final SimpleMessageListenerContainer container = new SimpleMessageListenerContainer(
 				cf);
-		Object listener = new Object() {
-			@SuppressWarnings("unused")
-			public void handleMessage(byte[] foo)
-					throws UnsupportedEncodingException {
-				String str = new String(foo, "UTF-8");
-				System.out.println(foo.getClass().getCanonicalName() + " : "
-						+ foo + str);
-			}
-		};
 		MessageListenerAdapter adapter = new MessageListenerAdapter(listener);
 		container.setMessageListener(adapter);
 		container.setQueueNames("train.stations.rt.station");
