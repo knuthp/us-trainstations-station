@@ -16,7 +16,8 @@ public class RtStationListenerTest {
 		rtDepartures.setPlaceId("a");
 		RtStop rtStop = new RtStop();
 		rtStop.setPublishedLineName("b");
-		rtStop.setVehicleAtStop(true);
+		rtStop.setJourneyId("myJourneyId");
+		rtStop.setDelay("PT10S");
 		rtDepartures.addStop(rtStop);
 		
 		listener.update(rtDepartures);

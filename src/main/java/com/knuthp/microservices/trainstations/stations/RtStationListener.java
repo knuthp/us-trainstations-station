@@ -7,8 +7,8 @@ public class RtStationListener {
 
 	public void update(RtDepartures rtDepartures) {
 		for (RtStop rtStop : rtDepartures.getRtStopList()) {
-			if (rtStop.isVehicleAtStop()) {
-				System.out.println("Place: " + rtDepartures.getPlaceId() + " " + rtStop.getPublishedLineName() + " At stop");
+			if (rtStop != null && !"PT0S".equals(rtStop.getDelay())) {
+				System.out.println("Place: " + rtDepartures.getPlaceId() + ", id " + rtStop.getJourneyId() + ", line " + rtStop.getPublishedLineName() + " delayed " + rtStop.getDelay());
 			}
 		}
 		

@@ -6,44 +6,48 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class RtStop {
 
-//	private boolean monitored;
 	private String publishedLineName;
-	private boolean vehicleAtStop;
-	
-	
-//	public boolean isMonitored() {
-//		return monitored;
-//	}
-//	public void setMonitored(boolean monitored) {
-//		this.monitored = monitored;
-//	}
+	private String journeyId;
+	private String delay;
+
 	public String getPublishedLineName() {
 		return publishedLineName;
 	}
+
 	public void setPublishedLineName(String publishedLineName) {
 		this.publishedLineName = publishedLineName;
 	}
-	public boolean isVehicleAtStop() {
-		return vehicleAtStop;
+
+	public String getJourneyId() {
+		return journeyId;
 	}
-	public void setVehicleAtStop(boolean vehicleAtStop) {
-		this.vehicleAtStop = vehicleAtStop;
+
+	public void setJourneyId(String journeyId) {
+		this.journeyId = journeyId;
+	}
+
+	public String getDelay() {
+		return delay;
+	}
+
+	public void setDelay(String delay) {
+		this.delay = delay;
 	}
 
 	@Override
-	public boolean equals(Object obj) {		
+	public boolean equals(Object obj) {
 		return EqualsBuilder.reflectionEquals(this, obj);
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return HashCodeBuilder.reflectionHashCode(this);
 	}
-	
-	
+
 	@Override
 	public String toString() {
 		return ToStringBuilder.reflectionToString(this);
 	}
+
 
 }
