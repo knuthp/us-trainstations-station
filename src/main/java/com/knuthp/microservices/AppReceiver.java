@@ -21,15 +21,20 @@ import com.knuthp.microservices.trainstations.stations.RtStationListener;
 @Component
 public class AppReceiver {
 	private final class RtStationRabbitMqListener {
+		private Logger logger = LoggerFactory
+				.getLogger(RtStationRabbitMqListener.class);
 		private RtStationListener rtStationListener = new RtStationListener();
+
 		@SuppressWarnings("unused")
-		public void handleMessage(byte[] foo)
-				throws JsonParseException, JsonMappingException, IOException {
+		public void handleMessage(byte[] foo) throws JsonParseException,
+				JsonMappingException, IOException {
 			String str = new String(foo, "UTF-8");
 			ObjectMapper mapper = new ObjectMapper();
-			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-			RtDepartures rtDepartures = mapper.readValue(foo, RtDepartures.class);
-			System.out.println(rtDepartures.getClass().getCanonicalName() + " : "
+			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+					false);
+			RtDepartures rtDepartures = mapper.readValue(foo,
+					RtDepartures.class);
+			logger.info(rtDepartures.getClass().getCanonicalName() + " : "
 					+ rtDepartures.getPlaceId());
 			rtStationListener.update(rtDepartures);
 		}
@@ -41,7 +46,7 @@ public class AppReceiver {
 	private final Object listener = new RtStationRabbitMqListener();
 
 	public AppReceiver() throws Exception {
-		
+
 		final URI rabbitMqUrl;
 		try {
 			rabbitMqUrl = new URI(DEFAULT_AMQP_RX);

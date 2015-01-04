@@ -22,7 +22,8 @@
 	</beans:bean>
 	
 	<context:component-scan base-package="com.knuthp.microservices" />
-	
-	
+
+	<!-- first, define your individual @Configuration classes as beans -->
+    <beans:bean class="com.knuthp.microservices.trainstations.stations.config.AppConfig"/>	
 	
 </beans:beans>
