@@ -4,8 +4,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.core.MessageListener;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -14,6 +12,9 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import com.knuthp.microservices.trainstations.stations.MessageListenerImplementation;
+import com.knuthp.microservices.trainstations.stations.RtStationListener;
 
 @Configuration
 public class AppConfig {
@@ -49,7 +50,7 @@ public class AppConfig {
 
 	@Bean
 	public Queue myQueue() {
-		return new Queue("listenerTest");
+		return new Queue("train.stations.rt.station");
 	}
 
 	@Bean
@@ -62,11 +63,12 @@ public class AppConfig {
 	}
 
 	@Bean
-	public MessageListener exampleListener() {
-		return new MessageListener() {
-			public void onMessage(Message message) {
-				System.out.println("received: " + message);
-			}
-		};
+	public MessageListenerImplementation exampleListener() {
+		return new MessageListenerImplementation(rtStationListener());
+	}
+	
+	@Bean
+	public RtStationListener rtStationListener() {
+		return new RtStationListener();
 	}
 }
