@@ -10,11 +10,10 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
-import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.knuthp.microservices.trainstations.stations.MessageListenerImplementation;
 import com.knuthp.microservices.trainstations.stations.RtStationListener;
 
 @Configuration
@@ -48,11 +47,6 @@ public class AppConfig {
 	public RabbitTemplate rabbitTemplate() {
 		return new RabbitTemplate(connectionFactory());
 	}
-	
-	@Bean
-	public Jackson2JsonMessageConverter messageConverter() {
-		return new Jackson2JsonMessageConverter();
-	}
 
 	@Bean
 	public Queue myQueue() {
@@ -60,22 +54,18 @@ public class AppConfig {
 	}
 
 	@Bean
-	public MessageListenerAdapter messageListenerAdapter() {
-		MessageListenerAdapter listener = new MessageListenerAdapter(rtStationListener(), messageConverter());
-	    listener.setDefaultListenerMethod("update");
-	    return listener;
-	}
-	
-	
-	@Bean
 	public SimpleMessageListenerContainer messageListenerContainer() {
 		SimpleMessageListenerContainer container = new SimpleMessageListenerContainer();
 		container.setConnectionFactory(connectionFactory());
 		container.setQueues(myQueue());
-		container.setMessageListener(messageListenerAdapter());
+		container.setMessageListener(exampleListener());
 		return container;
 	}
 
+	@Bean
+	public MessageListenerImplementation exampleListener() {
+		return new MessageListenerImplementation(rtStationListener());
+	}
 	
 	@Bean
 	public RtStationListener rtStationListener() {
