@@ -1,0 +1,10 @@
+language: java
+jdk:
+- oraclejdk8
+deploy:
+  provider: heroku
+  api_key:
+    secure: b+UgBCmq7a+OxhD7hvtC/ag8VPvQAiffSxuPm1cpjWPLS+92/1GqZfJ667CqzM0hcgVbkmFj4CzdxvU079Pdyw7jZDXrphPSjh9Ae3PqKMVraum//OSufrU3r7kmL6DXyifOHNDNE1LJr42jdkcF2OjlFB3uYdoJroKpKAoTgJg=
+  app: trainstations-station
+  on:
+    repo: knuthp/us-trainstations-station
