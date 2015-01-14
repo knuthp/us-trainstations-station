@@ -1,5 +1,7 @@
 package com.knuthp.microservices.trainstations.rt.domain;
 
+import java.time.OffsetDateTime;
+
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -47,6 +49,11 @@ public class RtStop {
 	@Override
 	public String toString() {
 		return ToStringBuilder.reflectionToString(this);
+	}
+
+	public void setAimedArrivalTime(OffsetDateTime arrivalTime) {
+		// TODO Auto-generated method stub
+		
 	}
 
 
