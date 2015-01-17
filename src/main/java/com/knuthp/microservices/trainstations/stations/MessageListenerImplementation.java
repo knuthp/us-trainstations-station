@@ -18,9 +18,7 @@ public class MessageListenerImplementation implements MessageListener {
 
 	public MessageListenerImplementation(RtStationListener rtStationListener) {
 		this.rtStationListener = rtStationListener;
-		mapper = new ObjectMapper();
-		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-				false);
+		mapper = new NsObjectMapper();
 	}
 
 	public void onMessage(Message message) {
