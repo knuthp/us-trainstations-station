@@ -1,15 +1,16 @@
 package com.knuthp.microservices.trainstations.stations;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.time.OffsetDateTime;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import com.knuthp.microservices.trainstations.rt.domain.RtDepartures;
 import com.knuthp.microservices.trainstations.rt.domain.RtStop;
 
 public class AtStationStoreTest {
@@ -23,10 +24,27 @@ public class AtStationStoreTest {
 		String journeyId = "myJourneyId";
 		OffsetDateTime exptectedArrivalTime = OffsetDateTime.now();
 		OffsetDateTime expectedDepartureTime = OffsetDateTime.now().plusDays(1);
-		RtDepartures rtDepartures = createDeparture(placeId, createStop(journeyId, exptectedArrivalTime,
-				expectedDepartureTime));
+		RtStop stop = createStop(journeyId, exptectedArrivalTime,
+				expectedDepartureTime);
 
-		atStationStore.updateDepartures(rtDepartures);
+		atStationStore.addDeparture(placeId, stop);
+
+		atStationStore.run(1);
+		Place asker = new Place(placeId);
+		TrainJourney oslo0742 = new TrainJourney();
+		verify(trainAtStationListener).arriveStation(eq(asker), eq(oslo0742));
+	}
+
+	@Test
+	public void testArrivesNowUpdateTriggersOneEvent() throws Exception {
+		String placeId = "asker";
+		String journeyId = "myJourneyId";
+		OffsetDateTime exptectedArrivalTime = OffsetDateTime.now();
+		OffsetDateTime expectedDepartureTime = OffsetDateTime.now().plusDays(1);
+		RtStop stop = createStop(journeyId, exptectedArrivalTime,
+				expectedDepartureTime);
+
+		atStationStore.addDeparture(placeId, stop);
 
 		atStationStore.run(1);
 		Place asker = new Place(placeId);
@@ -40,15 +58,15 @@ public class AtStationStoreTest {
 		String journeyId = "myJourneyId";
 		OffsetDateTime exptectedArrivalTime = OffsetDateTime.now().plusHours(1);
 		OffsetDateTime expectedDepartureTime = OffsetDateTime.now().plusDays(1);
-		RtDepartures rtDepartures = createDeparture(placeId, createStop(journeyId, exptectedArrivalTime,
-				expectedDepartureTime));
+		RtStop stop = createStop(journeyId, exptectedArrivalTime,
+				expectedDepartureTime);
 
-		atStationStore.updateDepartures(rtDepartures);
+		atStationStore.addDeparture(placeId, stop);
 		atStationStore.run(1);
 
-		verify(trainAtStationListener, times(0)).arriveStation(any(Place.class), any(TrainJourney.class));
+		verify(trainAtStationListener, times(0)).arriveStation(
+				any(Place.class), any(TrainJourney.class));
 	}
-
 
 	@Test
 	public void testArrivesTwiceNowTriggersTwoEvents() throws Exception {
@@ -56,24 +74,39 @@ public class AtStationStoreTest {
 		String journeyId = "myJourneyId";
 		OffsetDateTime exptectedArrivalTime = OffsetDateTime.now();
 		OffsetDateTime expectedDepartureTime = OffsetDateTime.now().plusDays(1);
-		RtDepartures rtDepartures = createDeparture(placeId, createStop(journeyId, exptectedArrivalTime,
-				expectedDepartureTime), createStop(journeyId, exptectedArrivalTime,
-						expectedDepartureTime));
+		RtStop stop1 = createStop(journeyId, exptectedArrivalTime,
+				expectedDepartureTime);
+		RtStop stop2 = createStop(journeyId, exptectedArrivalTime,
+				expectedDepartureTime);
 
-		atStationStore.updateDepartures(rtDepartures);
+		atStationStore.addDeparture(placeId, stop1);
+		atStationStore.addDeparture(placeId, stop2);
 		atStationStore.run(2);
 
-		verify(trainAtStationListener, times(2)).arriveStation(any(Place.class), any(TrainJourney.class));
+		verify(trainAtStationListener, times(2)).arriveStation(
+				any(Place.class), any(TrainJourney.class));
 	}
 
-	
-	private RtDepartures createDeparture(String placeId, RtStop ... rtStops) {
-		RtDepartures rtDepartures = new RtDepartures();
-		rtDepartures.setPlaceId(placeId);
-		for(RtStop rtStop : rtStops) {
-			rtDepartures.addStop(rtStop);
-		}
-		return rtDepartures;
+	@Test
+	public void testArrivesWithUpdateTriggerOneEvent() throws Exception {
+		String placeId = "asker";
+		String journeyId = "myJourneyId";
+		OffsetDateTime fixedTime = OffsetDateTime.now();
+		OffsetDateTime expectedArrivalTime = OffsetDateTime.now();
+		OffsetDateTime expectedDepartureTime = OffsetDateTime.now().plusDays(1);
+		RtStop stop1 = createStop(journeyId, expectedArrivalTime,
+				expectedDepartureTime);
+		stop1.setAimedArrivalTime(fixedTime);
+		RtStop stop1Update = createStop(journeyId, expectedArrivalTime,
+				expectedDepartureTime);
+		stop1Update.setAimedArrivalTime(fixedTime);
+
+		atStationStore.addDeparture(placeId, stop1);
+		atStationStore.updateDeparture(placeId, stop1Update);
+		atStationStore.run(2);
+
+		verify(trainAtStationListener, times(1)).arriveStation(
+				any(Place.class), any(TrainJourney.class));
 	}
 
 	private RtStop createStop(String journeyId,

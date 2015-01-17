@@ -2,14 +2,15 @@ package com.knuthp.microservices.trainstations.stations;
 
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
-import com.knuthp.microservices.trainstations.rt.domain.RtDepartures;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
 import com.knuthp.microservices.trainstations.rt.domain.RtStop;
 
 public class AtStationStore {
@@ -26,13 +27,18 @@ public class AtStationStore {
 		trainAtStationListeners.add(trainAtStationListener);
 	}
 
-	public void updateDepartures(RtDepartures rtDepartures) {
-		for (RtStop rtStop : rtDepartures.getRtStopList()) {
-			ArrivalEvent arrivalEvent = new ArrivalEvent(
-					rtDepartures.getPlaceId(), rtStop.getExpectedArrivalTime());
-			arrivalQueue.add(arrivalEvent);
-		}
+	public void addDeparture(String placeId, RtStop rtStop) {
+		ArrivalEvent arrivalEvent = new ArrivalEvent(placeId, rtStop);
+		arrivalQueue.add(arrivalEvent);
 	}
+	
+	public void updateDeparture(String placeId, RtStop rtStop) {
+		ArrivalEvent arrivalEvent = new ArrivalEvent(placeId,
+				rtStop);
+		arrivalQueue.remove(arrivalEvent);
+		arrivalQueue.add(arrivalEvent);
+	}
+
 
 	public void run(int numberOfPolls) {
 		for (int i = 0; i < numberOfPolls; i++) {
@@ -49,18 +55,20 @@ public class AtStationStore {
 
 	class ArrivalEvent implements Delayed {
 		private String placeId;
-		private OffsetDateTime arrival;
+		private OffsetDateTime expectedArrivalTime;
+		private OffsetDateTime aimedArrival;
 
-		public ArrivalEvent(String placeId, OffsetDateTime arrival) {
+		public ArrivalEvent(String placeId, RtStop rtStop) {
 			this.placeId = placeId;
-			this.arrival = arrival;
+			this.expectedArrivalTime = rtStop.getExpectedArrivalTime();
+			this.setAimedArrival(rtStop.getAimedArrivalTime());
 		}
 
 		@Override
 		public int compareTo(Delayed arg0) {
 			if (arg0 instanceof ArrivalEvent) {
 				ArrivalEvent other = (ArrivalEvent) arg0;
-				return arrival.compareTo(other.getArrival());
+				return expectedArrivalTime.compareTo(other.getArrival());
 			} else {
 				long difference = getDelay(TimeUnit.MILLISECONDS)
 						- arg0.getDelay(TimeUnit.MILLISECONDS);
@@ -77,7 +85,7 @@ public class AtStationStore {
 
 		@Override
 		public long getDelay(TimeUnit unit) {
-			return OffsetDateTime.now().until(arrival,
+			return OffsetDateTime.now().until(expectedArrivalTime,
 					convertToChronoUnits(unit));
 		}
 
@@ -112,11 +120,29 @@ public class AtStationStore {
 		}
 
 		public OffsetDateTime getArrival() {
-			return arrival;
+			return expectedArrivalTime;
 		}
 
 		public void setArrival(OffsetDateTime arrival) {
-			this.arrival = arrival;
+			this.expectedArrivalTime = arrival;
+		}
+
+		public OffsetDateTime getAimedArrival() {
+			return aimedArrival;
+		}
+
+		public void setAimedArrival(OffsetDateTime aimedArrival) {
+			this.aimedArrival = aimedArrival;
+		}
+
+		@Override
+		public int hashCode() {
+			return HashCodeBuilder.reflectionHashCode(this, "expectedArrivalTime");
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			return EqualsBuilder.reflectionEquals(this, obj, "expectedArrivalTime");
 		}
 
 	}
