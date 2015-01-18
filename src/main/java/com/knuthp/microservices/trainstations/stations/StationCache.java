@@ -32,7 +32,11 @@ public class StationCache {
 			cache.put(rtDepartures.getPlaceId(), placeStops);
 		} else {
 			for (RtStop rtStop : rtDepartures.getRtStopList()) {
-				if (!placeStops.get(rtStop.getJourneyId()).equals(rtStop)) {
+				RtStop oldRtStop = placeStops.get(rtStop.getJourneyId());
+				if (oldRtStop == null) {
+					placeStops.put(rtDepartures.getPlaceId(), rtStop);
+					newList.add(rtStop);
+				} else if (!oldRtStop.equals(rtStop)) {
 					placeStops.put(rtDepartures.getPlaceId(), rtStop);
 					updateList.add(rtStop);
 				}

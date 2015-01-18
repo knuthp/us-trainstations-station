@@ -4,7 +4,19 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import com.knuthp.microservices.trainstations.rt.domain.RtStop;
+
 public class TrainJourney {
+
+	private final RtStop rtStop;
+
+	public TrainJourney(final RtStop rtStop) {
+		this.rtStop = rtStop;
+	}
+
+	public RtStop getRtStop() {
+		return rtStop;
+	}
 
 	@Override
 	public boolean equals(Object obj) {
@@ -21,5 +33,4 @@ public class TrainJourney {
 		return ToStringBuilder.reflectionToString(this);
 	}
 
-	
 }

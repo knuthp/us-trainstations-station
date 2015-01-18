@@ -1,6 +1,6 @@
 package com.knuthp.microservices.trainstations.stations;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -13,7 +13,7 @@ public class RtStationListenerTest {
 	@Test
 	@Ignore
 	public void test() {
-		RtStationListener listener = new RtStationListener();
+		RtDelayListener listener = new RtDelayListener();
 		RtDepartures rtDepartures = new RtDepartures();
 		rtDepartures.setPlaceId("a");
 		RtStop rtStop = new RtStop();
@@ -21,9 +21,9 @@ public class RtStationListenerTest {
 		rtStop.setJourneyId("myJourneyId");
 		rtStop.setDelay("PT10S");
 		rtDepartures.addStop(rtStop);
-		
+
 		listener.update(rtDepartures);
-		
+
 		fail("Not yet implemented");
 	}
 

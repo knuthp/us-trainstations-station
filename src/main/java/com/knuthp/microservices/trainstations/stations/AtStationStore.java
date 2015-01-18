@@ -10,10 +10,14 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.knuthp.microservices.trainstations.rt.domain.RtStop;
 
-public class AtStationStore {
+public class AtStationStore implements Runnable {
+	private Logger logger = LoggerFactory.getLogger(AtStationStore.class);
 	private List<TrainAtStationListener> trainAtStationListeners;
 	private DelayQueue<ArrivalEvent> arrivalQueue;
 
@@ -31,37 +35,39 @@ public class AtStationStore {
 		ArrivalEvent arrivalEvent = new ArrivalEvent(placeId, rtStop);
 		arrivalQueue.add(arrivalEvent);
 	}
-	
+
 	public void updateDeparture(String placeId, RtStop rtStop) {
-		ArrivalEvent arrivalEvent = new ArrivalEvent(placeId,
-				rtStop);
+		ArrivalEvent arrivalEvent = new ArrivalEvent(placeId, rtStop);
 		arrivalQueue.remove(arrivalEvent);
 		arrivalQueue.add(arrivalEvent);
 	}
-
 
 	public void run(int numberOfPolls) {
 		for (int i = 0; i < numberOfPolls; i++) {
 			ArrivalEvent arrivalEvent = arrivalQueue.poll();
 			if (arrivalEvent != null) {
 				for (TrainAtStationListener trainAtStationListener : trainAtStationListeners) {
-					trainAtStationListener.arriveStation(new Place("asker"),
-							new TrainJourney());
+					trainAtStationListener.arriveStation(
+							new Place(arrivalEvent.getPlaceId()),
+							new TrainJourney(arrivalEvent.getRtStop()));
 				}
 			}
 		}
-
 	}
 
 	class ArrivalEvent implements Delayed {
-		private String placeId;
-		private OffsetDateTime expectedArrivalTime;
-		private OffsetDateTime aimedArrival;
+		private final String placeId;
+		private final OffsetDateTime expectedArrivalTime;
+		private final OffsetDateTime aimedArrival;
+		private final String journeyId;
+		private final RtStop rtStop;
 
-		public ArrivalEvent(String placeId, RtStop rtStop) {
+		public ArrivalEvent(final String placeId, final RtStop rtStop) {
 			this.placeId = placeId;
 			this.expectedArrivalTime = rtStop.getExpectedArrivalTime();
-			this.setAimedArrival(rtStop.getAimedArrivalTime());
+			this.aimedArrival = rtStop.getAimedArrivalTime();
+			this.journeyId = rtStop.getJourneyId();
+			this.rtStop = rtStop;
 		}
 
 		@Override
@@ -115,36 +121,57 @@ public class AtStationStore {
 			return placeId;
 		}
 
-		public void setPlace(String placeId) {
-			this.placeId = placeId;
-		}
-
 		public OffsetDateTime getArrival() {
 			return expectedArrivalTime;
-		}
-
-		public void setArrival(OffsetDateTime arrival) {
-			this.expectedArrivalTime = arrival;
 		}
 
 		public OffsetDateTime getAimedArrival() {
 			return aimedArrival;
 		}
 
-		public void setAimedArrival(OffsetDateTime aimedArrival) {
-			this.aimedArrival = aimedArrival;
+		public String getJourneyId() {
+			return journeyId;
+		}
+
+		public RtStop getRtStop() {
+			return rtStop;
 		}
 
 		@Override
 		public int hashCode() {
-			return HashCodeBuilder.reflectionHashCode(this, "expectedArrivalTime");
-		}
-		
-		@Override
-		public boolean equals(Object obj) {
-			return EqualsBuilder.reflectionEquals(this, obj, "expectedArrivalTime");
+			return HashCodeBuilder.reflectionHashCode(this,
+					"expectedArrivalTime", "rtStop");
 		}
 
+		@Override
+		public boolean equals(Object obj) {
+			return EqualsBuilder.reflectionEquals(this, obj,
+					"expectedArrivalTime", "rtStop");
+		}
+
+		@Override
+		public String toString() {
+			return ToStringBuilder.reflectionToString(this);
+		}
+	}
+
+	@Override
+	public void run() {
+		while (true) {
+			try {
+				ArrivalEvent arrivalEvent = arrivalQueue.take();
+				if (arrivalEvent != null) {
+					for (TrainAtStationListener trainAtStationListener : trainAtStationListeners) {
+						trainAtStationListener.arriveStation(new Place(
+								arrivalEvent.getPlaceId()), new TrainJourney(
+								arrivalEvent.getRtStop()));
+					}
+				}
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				logger.error("Thread interrupted", e);
+			}
+		}
 	}
 
 }

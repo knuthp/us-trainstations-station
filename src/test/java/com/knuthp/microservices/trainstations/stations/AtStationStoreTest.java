@@ -31,7 +31,7 @@ public class AtStationStoreTest {
 
 		atStationStore.run(1);
 		Place asker = new Place(placeId);
-		TrainJourney oslo0742 = new TrainJourney();
+		TrainJourney oslo0742 = new TrainJourney(stop);
 		verify(trainAtStationListener).arriveStation(eq(asker), eq(oslo0742));
 	}
 
@@ -48,7 +48,7 @@ public class AtStationStoreTest {
 
 		atStationStore.run(1);
 		Place asker = new Place(placeId);
-		TrainJourney oslo0742 = new TrainJourney();
+		TrainJourney oslo0742 = new TrainJourney(stop);
 		verify(trainAtStationListener).arriveStation(eq(asker), eq(oslo0742));
 	}
 
