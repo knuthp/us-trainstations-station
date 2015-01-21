@@ -1,14 +1,21 @@
 package com.knuthp.microservices.trainstations.stations;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.knuthp.microservices.trainstations.rt.domain.RtDepartures;
 import com.knuthp.microservices.trainstations.rt.domain.RtStop;
 
 public class StationCache {
+	private static final Logger LOG = LoggerFactory
+			.getLogger(StationCache.class);
+
 	public enum FilterStatus {
 		NEW(), UPDATE(), DELETE(), EQUAL();
 	}
@@ -24,6 +31,8 @@ public class StationCache {
 		List<RtStop> updateList = new ArrayList<RtStop>();
 		Map<String, RtStop> placeStops = cache.get(rtDepartures.getPlaceId());
 		if (placeStops == null) {
+			LOG.info("New place, adding all: placeId="
+					+ rtDepartures.getPlaceId());
 			for (RtStop rtStop : rtDepartures.getRtStopList()) {
 				placeStops = new HashMap<String, RtStop>();
 				placeStops.put(rtStop.getJourneyId(), rtStop);
@@ -32,13 +41,42 @@ public class StationCache {
 			cache.put(rtDepartures.getPlaceId(), placeStops);
 		} else {
 			for (RtStop rtStop : rtDepartures.getRtStopList()) {
-				RtStop oldRtStop = placeStops.get(rtStop.getJourneyId());
-				if (oldRtStop == null) {
-					placeStops.put(rtDepartures.getPlaceId(), rtStop);
-					newList.add(rtStop);
-				} else if (!oldRtStop.equals(rtStop)) {
-					placeStops.put(rtDepartures.getPlaceId(), rtStop);
-					updateList.add(rtStop);
+				if (rtStop.isMonitored()) {
+					RtStop oldRtStop = placeStops.get(rtStop.getJourneyId());
+					if (oldRtStop == null) {
+						LOG.info("New journey: placeId="
+								+ rtDepartures.getPlaceId() + ", journeyId="
+								+ rtStop.getJourneyId() + ", line="
+								+ rtStop.getPublishedLineName());
+						placeStops.put(rtStop.getJourneyId(), rtStop);
+						newList.add(rtStop);
+					} else if (!oldRtStop.getExpectedArrivalTime().equals(
+							rtStop.getExpectedArrivalTime())) {
+						LOG.info("Updated journey: placeId="
+								+ rtDepartures.getPlaceId() + ", journeyId="
+								+ rtStop.getJourneyId() + ", line="
+								+ rtStop.getPublishedLineName());
+						LOG.info("Diff: old="
+								+ oldRtStop.getExpectedArrivalTime()
+								+ ", new="
+								+ rtStop.getExpectedArrivalTime()
+								+ ", diff="
+								+ Duration.between(
+										oldRtStop.getExpectedArrivalTime(),
+										rtStop.getExpectedArrivalTime()));
+						placeStops.put(rtStop.getJourneyId(), rtStop);
+						updateList.add(rtStop);
+					} else {
+						LOG.debug("Equal journey: placeId="
+								+ rtDepartures.getPlaceId() + ", journeyId="
+								+ rtStop.getJourneyId() + ", line="
+								+ rtStop.getPublishedLineName());
+					}
+				} else {
+					LOG.debug("Not monitored: placeId="
+							+ rtDepartures.getPlaceId() + ", destination="
+							+ rtStop.getDestinationName() + ", line="
+							+ rtStop.getPublishedLineName());
 				}
 			}
 		}
