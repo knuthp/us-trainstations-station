@@ -11,16 +11,19 @@ public class TrainAtStationStore implements TrainAtStationListener {
 	@Override
 	public void arriveStation(Place place, TrainJourney trainJourney) {
 		RtStop rtStop = trainJourney.getRtStop();
-		logger.info("ArriveAtStation={}, line={}, expArriveTime={}", place
+		logger.info("ArriveAtStation={}, line={}, expArriveTime={}, dest={}", place
 				.getPlaceId(), rtStop.getPublishedLineName(), rtStop
-				.getExpectedArrivalTime().toString());
+				.getExpectedArrivalTime().toString(), rtStop.getDestinationName());
 	}
 
 	@Override
 	public void leaveStation(Place place, TrainJourney trainJourney) {
 		RtStop rtStop = trainJourney.getRtStop();
-		logger.info("DepartureAtStation={}, line={}, expArriveTime={}", place
-				.getPlaceId(), rtStop.getPublishedLineName(), rtStop
-				.getExpectedArrivalTime().toString());	}
+		logger.info(
+				"DepartureAtStation={}, line={}, expArriveTime={}, dest={}",
+				place.getPlaceId(), rtStop.getPublishedLineName(), rtStop
+						.getExpectedDepartureTime().toString(), rtStop
+						.getDestinationName());
+	}
 
 }
