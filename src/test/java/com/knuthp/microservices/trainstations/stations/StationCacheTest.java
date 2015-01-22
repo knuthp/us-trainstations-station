@@ -88,6 +88,10 @@ public class StationCacheTest {
 		RtStop rtStop = new RtStop();
 		rtStop.setJourneyId(journeyId);
 		rtStop.setExpectedArrivalTime(arrivalTime);
+		rtStop.setAimedArrivalTime(arrivalTime.plusSeconds(2));
+		rtStop.setExpectedDepartureTime(arrivalTime.plusMinutes(2).plusSeconds(30));
+		rtStop.setAimedDepartureTime(arrivalTime.plusMinutes(2).plusSeconds(3));
+		rtStop.setMonitored(true);
 		return rtStop;
 	}
 
