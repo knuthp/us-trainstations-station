@@ -19,11 +19,11 @@ import com.knuthp.microservices.trainstations.rt.domain.RtStop;
 public class AtStationStore implements Runnable {
 	private Logger logger = LoggerFactory.getLogger(AtStationStore.class);
 	private List<TrainAtStationListener> trainAtStationListeners;
-	private DelayQueue<ArrivalEvent> arrivalQueue;
+	private DelayQueue<StationEvent> stationEventQueue;
 
 	public AtStationStore() {
 		trainAtStationListeners = new ArrayList<TrainAtStationListener>();
-		arrivalQueue = new DelayQueue<AtStationStore.ArrivalEvent>();
+		stationEventQueue = new DelayQueue<AtStationStore.StationEvent>();
 	}
 
 	public void addTrainAtStationListener(
@@ -33,48 +33,62 @@ public class AtStationStore implements Runnable {
 
 	public void addDeparture(String placeId, RtStop rtStop) {
 		ArrivalEvent arrivalEvent = new ArrivalEvent(placeId, rtStop);
-		arrivalQueue.add(arrivalEvent);
+		stationEventQueue.add(arrivalEvent);
+		DepartureEvent departureEvent = new DepartureEvent(placeId, rtStop);
+		stationEventQueue.add(departureEvent);
 	}
 
 	public void updateDeparture(String placeId, RtStop rtStop) {
 		ArrivalEvent arrivalEvent = new ArrivalEvent(placeId, rtStop);
-		arrivalQueue.remove(arrivalEvent);
-		arrivalQueue.add(arrivalEvent);
+		stationEventQueue.remove(arrivalEvent);
+		stationEventQueue.add(arrivalEvent);
+		
+		DepartureEvent departureEvent = new DepartureEvent(placeId, rtStop);
+		stationEventQueue.remove(departureEvent);
+		stationEventQueue.add(departureEvent);
 	}
 
 	public void run(int numberOfPolls) {
 		for (int i = 0; i < numberOfPolls; i++) {
-			ArrivalEvent arrivalEvent = arrivalQueue.poll();
-			if (arrivalEvent != null) {
+			StationEvent stationEvent = stationEventQueue.poll();
+			if (stationEvent != null) {
 				for (TrainAtStationListener trainAtStationListener : trainAtStationListeners) {
-					trainAtStationListener.arriveStation(
-							new Place(arrivalEvent.getPlaceId()),
-							new TrainJourney(arrivalEvent.getRtStop()));
+					stationEvent.fireListener(trainAtStationListener);
 				}
 			}
 		}
 	}
 
-	class ArrivalEvent implements Delayed {
-		private final String placeId;
-		private final OffsetDateTime expectedArrivalTime;
-		private final OffsetDateTime aimedArrival;
-		private final String journeyId;
-		private final RtStop rtStop;
+	public enum EventType {
+		ARRIVAL, DEPARTURE
+	}
 
-		public ArrivalEvent(final String placeId, final RtStop rtStop) {
+	abstract class StationEvent implements Delayed {
+		protected final String placeId;
+		protected final OffsetDateTime expected;
+		protected final OffsetDateTime aimed;
+		protected final String journeyId;
+		protected final RtStop rtStop;
+		protected final EventType eventType;
+
+		public StationEvent(final String placeId, final RtStop rtStop,
+				final OffsetDateTime expected, final OffsetDateTime aimed,
+				final EventType eventType) {
 			this.placeId = placeId;
-			this.expectedArrivalTime = rtStop.getExpectedArrivalTime();
-			this.aimedArrival = rtStop.getAimedArrivalTime();
+			this.expected = expected;
+			this.aimed = aimed;
 			this.journeyId = rtStop.getJourneyId();
 			this.rtStop = rtStop;
+			this.eventType = eventType;
 		}
+
+		public abstract void fireListener(TrainAtStationListener trainAtStationListener);
 
 		@Override
 		public int compareTo(Delayed arg0) {
 			if (arg0 instanceof ArrivalEvent) {
 				ArrivalEvent other = (ArrivalEvent) arg0;
-				return expectedArrivalTime.compareTo(other.getArrival());
+				return getExpected().compareTo(other.getArrival());
 			} else {
 				long difference = getDelay(TimeUnit.MILLISECONDS)
 						- arg0.getDelay(TimeUnit.MILLISECONDS);
@@ -91,7 +105,7 @@ public class AtStationStore implements Runnable {
 
 		@Override
 		public long getDelay(TimeUnit unit) {
-			return OffsetDateTime.now().until(expectedArrivalTime,
+			return OffsetDateTime.now().until(getExpected(),
 					convertToChronoUnits(unit));
 		}
 
@@ -122,11 +136,11 @@ public class AtStationStore implements Runnable {
 		}
 
 		public OffsetDateTime getArrival() {
-			return expectedArrivalTime;
+			return getExpected();
 		}
 
-		public OffsetDateTime getAimedArrival() {
-			return aimedArrival;
+		public OffsetDateTime getAimed() {
+			return aimed;
 		}
 
 		public String getJourneyId() {
@@ -139,32 +153,60 @@ public class AtStationStore implements Runnable {
 
 		@Override
 		public int hashCode() {
-			return HashCodeBuilder.reflectionHashCode(this,
-					"expectedArrivalTime", "rtStop");
+			return HashCodeBuilder.reflectionHashCode(this, "expected",
+					"rtStop");
 		}
 
 		@Override
 		public boolean equals(Object obj) {
-			return EqualsBuilder.reflectionEquals(this, obj,
-					"expectedArrivalTime", "rtStop");
+			return EqualsBuilder.reflectionEquals(this, obj, "expected",
+					"rtStop");
 		}
 
 		@Override
 		public String toString() {
 			return ToStringBuilder.reflectionToString(this);
 		}
+
+		public OffsetDateTime getExpected() {
+			return expected;
+		}
+	}
+
+	class ArrivalEvent extends StationEvent {
+		public ArrivalEvent(final String placeId, final RtStop rtStop) {
+			super(placeId, rtStop, rtStop.getExpectedArrivalTime(), rtStop
+					.getAimedArrivalTime(), EventType.ARRIVAL);
+		}
+
+		public void fireListener(TrainAtStationListener trainAtStationListener) {
+			trainAtStationListener.arriveStation(new Place(getPlaceId()),
+					new TrainJourney(getRtStop()));
+		}
+
+	}
+
+	class DepartureEvent extends StationEvent {
+		public DepartureEvent(final String placeId, final RtStop rtStop) {
+			super(placeId, rtStop, rtStop.getExpectedDepartureTime(), rtStop
+					.getAimedDepartureTime(), EventType.DEPARTURE);
+		}
+
+		public void fireListener(TrainAtStationListener trainAtStationListener) {
+			trainAtStationListener.leaveStation(new Place(getPlaceId()),
+					new TrainJourney(getRtStop()));
+		}
+
 	}
 
 	@Override
 	public void run() {
 		while (true) {
 			try {
-				ArrivalEvent arrivalEvent = arrivalQueue.take();
-				if (arrivalEvent != null) {
+				StationEvent stationEvent = stationEventQueue.take();
+				if (stationEvent != null) {
 					for (TrainAtStationListener trainAtStationListener : trainAtStationListeners) {
-						trainAtStationListener.arriveStation(new Place(
-								arrivalEvent.getPlaceId()), new TrainJourney(
-								arrivalEvent.getRtStop()));
+						stationEvent.fireListener(trainAtStationListener);
 					}
 				}
 			} catch (InterruptedException e) {

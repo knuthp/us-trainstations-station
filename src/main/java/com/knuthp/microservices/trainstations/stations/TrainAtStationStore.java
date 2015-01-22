@@ -18,8 +18,9 @@ public class TrainAtStationStore implements TrainAtStationListener {
 
 	@Override
 	public void leaveStation(Place place, TrainJourney trainJourney) {
-		logger.info("LeaveStation: {} , stop: {}", place.getPlaceId(),
-				trainJourney);
-	}
+		RtStop rtStop = trainJourney.getRtStop();
+		logger.info("DepartureAtStation={}, line={}, expArriveTime={}", place
+				.getPlaceId(), rtStop.getPublishedLineName(), rtStop
+				.getExpectedArrivalTime().toString());	}
 
 }

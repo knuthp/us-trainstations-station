@@ -51,19 +51,21 @@ public class StationCache {
 						placeStops.put(rtStop.getJourneyId(), rtStop);
 						newList.add(rtStop);
 					} else if (!oldRtStop.getExpectedArrivalTime().equals(
-							rtStop.getExpectedArrivalTime())) {
+							rtStop.getExpectedArrivalTime())
+							|| !oldRtStop.getExpectedDepartureTime().equals(
+									rtStop.getExpectedDepartureTime())) {
 						LOG.info("Updated journey: placeId="
 								+ rtDepartures.getPlaceId() + ", journeyId="
 								+ rtStop.getJourneyId() + ", line="
 								+ rtStop.getPublishedLineName());
-						LOG.info("Diff: old="
-								+ oldRtStop.getExpectedArrivalTime()
-								+ ", new="
-								+ rtStop.getExpectedArrivalTime()
-								+ ", diff="
+						LOG.info("diffArrival="
 								+ Duration.between(
 										oldRtStop.getExpectedArrivalTime(),
-										rtStop.getExpectedArrivalTime()));
+										rtStop.getExpectedArrivalTime())
+								+ ", diffDeparture="
+								+ Duration.between(
+										oldRtStop.getExpectedDepartureTime(),
+										rtStop.getExpectedDepartureTime()));
 						placeStops.put(rtStop.getJourneyId(), rtStop);
 						updateList.add(rtStop);
 					} else {
