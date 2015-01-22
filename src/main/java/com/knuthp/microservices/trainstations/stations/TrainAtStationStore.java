@@ -20,7 +20,7 @@ public class TrainAtStationStore implements TrainAtStationListener {
 	public void leaveStation(Place place, TrainJourney trainJourney) {
 		RtStop rtStop = trainJourney.getRtStop();
 		logger.info(
-				"DepartureAtStation={}, line={}, expArriveTime={}, dest={}",
+				"DepartureAtStation={}, line={}, expDepartureTime={}, dest={}",
 				place.getPlaceId(), rtStop.getPublishedLineName(), rtStop
 						.getExpectedDepartureTime().toString(), rtStop
 						.getDestinationName());
