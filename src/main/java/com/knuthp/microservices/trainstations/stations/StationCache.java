@@ -33,8 +33,8 @@ public class StationCache {
 		if (placeStops == null) {
 			LOG.info("New place, adding all: placeId="
 					+ rtDepartures.getPlaceId());
+			placeStops = new HashMap<String, RtStop>();
 			for (RtStop rtStop : rtDepartures.getRtStopList()) {
-				placeStops = new HashMap<String, RtStop>();
 				placeStops.put(rtStop.getJourneyId(), rtStop);
 			}
 			newList.addAll(rtDepartures.getRtStopList());
