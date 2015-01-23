@@ -84,7 +84,7 @@ public class AppConfig {
 	}
 
 	@Bean
-	public TrainAtStationListener trainAtStationStore() {
+	public TrainAtStationStore trainAtStationStore() {
 		return new TrainAtStationStore();
 	}
 
